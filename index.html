@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dienstplan → Kalender</title>
+<meta name="theme-color" content="#16202B">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Spline+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#16202B; --paper:#EEF2F4; --surface:#FFFFFF; --line:#D7E0E5;
+  --muted:#5D7482; --accent:#0E6E6B; --accent-ink:#FFFFFF; --warn:#B45309;
+  --danger:#9F1239;
+  --c-banane:#F6BF26; --c-basilikum:#0B8043; --c-mandarine:#F4511E;
+  --c-salbei:#33B679; --c-pfau:#039BE5; --c-offen:#94A3B8;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:'Spline Sans',system-ui,sans-serif; font-size:16px; line-height:1.5;
+  padding-bottom:110px;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:640px;margin:0 auto;padding:20px 16px 0}
+
+/* ---------- Kopf ---------- */
+.masthead{border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:22px}
+.eyebrow{
+  font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:14px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 2px
+}
+h1{
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:38px;
+  line-height:1.02;letter-spacing:-.01em;margin:0
+}
+.masthead .sub{margin:6px 0 0;color:var(--muted);font-size:14px}
+
+/* ---------- Bausteine ---------- */
+.card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:16px;margin-bottom:16px
+}
+.card > h2{
+  font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:13px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+  margin:0 0 12px
+}
+label{display:block;font-size:13px;font-weight:500;color:var(--muted);margin:0 0 4px}
+input[type=text],input[type=password],input[type=date],select{
+  width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;
+  background:#fff;color:var(--ink);font-family:inherit;font-size:15px
+}
+input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible{
+  outline:2px solid var(--accent);outline-offset:2px
+}
+.field{margin-bottom:12px}
+.field:last-child{margin-bottom:0}
+
+button{
+  font-family:'Spline Sans',sans-serif;font-size:15px;font-weight:600;
+  border-radius:8px;border:1px solid transparent;padding:11px 16px;cursor:pointer
+}
+.btn-primary{background:var(--accent);color:var(--accent-ink)}
+.btn-primary:disabled{background:#9FB6BC;cursor:not-allowed}
+.btn-ghost{background:#fff;border-color:var(--line);color:var(--ink)}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+
+details.conn{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-bottom:16px}
+details.conn > summary{
+  padding:14px 16px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;
+  font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)
+}
+details.conn .inner{padding:0 16px 16px}
+
+/* ---------- Datei ---------- */
+.drop{
+  border:2px dashed var(--line);border-radius:var(--r);padding:26px 16px;text-align:center;
+  background:#FAFCFC;cursor:pointer;transition:border-color .15s,background .15s
+}
+.drop:hover,.drop.over{border-color:var(--accent);background:#F2F8F8}
+.drop .big{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:600}
+.drop .small{font-size:13px;color:var(--muted);margin-top:4px}
+.filename{
+  font-family:'JetBrains Mono',monospace;font-size:13px;margin-top:10px;
+  color:var(--ink);word-break:break-all
+}
+
+/* ---------- Dienstliste ---------- */
+.rows{display:flex;flex-direction:column;gap:8px}
+.row{
+  display:grid;grid-template-columns:6px 1fr auto;gap:10px;align-items:center;
+  border:1px solid var(--line);border-radius:8px;background:#fff;overflow:hidden;
+  animation:in .18s ease-out both
+}
+@keyframes in{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+.bar{align-self:stretch;background:var(--c-offen)}
+.row .mid{padding:8px 0;display:flex;flex-direction:column;gap:6px;min-width:0}
+.row .ctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.row input[type=date]{width:auto;flex:0 1 150px;padding:6px 8px;font-size:14px;
+  font-family:'JetBrains Mono',monospace}
+.row select{width:auto;flex:0 0 auto;padding:6px 8px;font-size:14px}
+.meta{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta .flag{color:var(--warn);font-weight:600}
+.del{
+  background:none;border:none;color:var(--muted);font-size:20px;line-height:1;
+  padding:0 12px 0 0;cursor:pointer
+}
+.del:hover{color:var(--danger)}
+
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;
+  font-size:12px;border:1px solid var(--line);border-radius:999px;padding:4px 10px;background:#fff
+}
+.dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+
+.empty{color:var(--muted);font-size:14px;text-align:center;padding:18px 0}
+
+/* ---------- Status ---------- */
+.status{border-radius:8px;padding:11px 13px;font-size:14px;margin-top:12px;display:none}
+.status.show{display:block}
+.status.info{background:#EAF3F3;color:#0B4F4D;border:1px solid #BBD9D8}
+.status.good{background:#E9F5EC;color:#14532D;border:1px solid #BEE0C7}
+.status.bad{background:#FDECEC;color:#7F1D1D;border:1px solid #F3C7C7}
+
+/* ---------- Aktionsleiste ---------- */
+.actionbar{
+  position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.97);
+  border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+  backdrop-filter:blur(6px)
+}
+.actionbar .inner{max-width:640px;margin:0 auto;display:flex;gap:10px;align-items:center}
+.actionbar .count{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted);white-space:nowrap}
+.actionbar button{flex:1}
+
+.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.4);
+  border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:7px}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">BaBella Intensivpflege</p>
+    <h1>Dienstplan&nbsp;→&nbsp;Kalender</h1>
+    <p class="sub">Plan hochladen, prüfen, in Fam.Berg eintragen.</p>
+  </header>
+
+  <details class="conn" id="conn">
+    <summary>Verbindung</summary>
+    <div class="inner">
+      <div class="field">
+        <label for="url">Backend-Adresse</label>
+        <input type="text" id="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="pass">Passwort</label>
+        <input type="password" id="pass" placeholder="deine App-Passphrase" autocomplete="current-password">
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" id="btnSave">Speichern und prüfen</button>
+      </div>
+      <div class="status" id="connStatus" role="status" aria-live="polite"></div>
+    </div>
+  </details>
+
+  <section class="card">
+    <h2>Plan auslesen</h2>
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Datei auswählen">
+      <div class="big">Datei wählen</div>
+      <div class="small">PDF oder Screenshot · tippen oder hierher ziehen</div>
+      <div class="filename" id="fname"></div>
+    </div>
+    <input type="file" id="file" accept="application/pdf,image/*" hidden>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn-primary" id="btnParse" disabled>Dienste erkennen</button>
+    </div>
+    <div class="status" id="parseStatus" role="status" aria-live="polite"></div>
+  </section>
+
+  <section class="card">
+    <h2>Erkannte Dienste</h2>
+    <div class="chips" id="chips"></div>
+    <div class="rows" id="rows"></div>
+    <div class="empty" id="empty">Noch nichts erkannt.</div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn-ghost" id="btnAdd">Dienst hinzufügen</button>
+    </div>
+  </section>
+
+  <div class="status" id="writeStatus" role="status" aria-live="polite"></div>
+</div>
+
+<div class="actionbar">
+  <div class="inner">
+    <span class="count" id="count">0 Dienste</span>
+    <button class="btn-primary" id="btnWrite" disabled>In Kalender eintragen</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const COLORS = {
+  '2':'var(--c-salbei)', '5':'var(--c-banane)', '6':'var(--c-mandarine)',
+  '7':'var(--c-pfau)', '10':'var(--c-basilikum)'
+};
+const WD = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+
+const state = { url:'', pass:'', mapping:null, items:[], file:null };
+
+const $ = id => document.getElementById(id);
+
+/* ---------- Speicher ---------- */
+function loadCfg(){
+  try{
+    const c = JSON.parse(localStorage.getItem('dienstplan.cfg') || '{}');
+    state.url = c.url || ''; state.pass = c.pass || '';
+    $('url').value = state.url; $('pass').value = state.pass;
+  }catch(e){}
+  if(!state.url || !state.pass) $('conn').open = true;
+}
+function saveCfg(){
+  localStorage.setItem('dienstplan.cfg', JSON.stringify({url:state.url, pass:state.pass}));
+}
+
+/* ---------- Backend ---------- */
+async function api(action, extra){
+  if(!state.url || !state.pass) throw new Error('Backend-Adresse und Passwort fehlen.');
+  const body = Object.assign({action:action, pass:state.pass}, extra || {});
+  // text/plain vermeidet die CORS-Vorabanfrage, die Apps Script nicht beantworten kann
+  const res = await fetch(state.url, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify(body),
+    redirect:'follow'
+  });
+  const txt = await res.text();
+  let data;
+  try{ data = JSON.parse(txt); }
+  catch(e){ throw new Error('Unerwartete Antwort vom Backend. Ist die Adresse richtig und die Bereitstellung auf „Jeder" gesetzt?'); }
+  if(!data.ok) throw new Error(data.error || 'Unbekannter Fehler.');
+  return data;
+}
+
+/* ---------- Status ---------- */
+function say(el, kind, msg){
+  const n = $(el);
+  n.className = 'status show ' + kind;
+  n.textContent = msg;
+}
+function hide(el){ $(el).className = 'status'; }
+
+function busy(btn, on, label){
+  const b = $(btn);
+  b.disabled = on;
+  if(on){ b.dataset.label = b.textContent; b.innerHTML = '<span class="spin"></span>' + label; }
+  else if(b.dataset.label){ b.textContent = b.dataset.label; }
+}
+
+/* ---------- Verbindung ---------- */
+$('btnSave').addEventListener('click', async () => {
+  state.url = $('url').value.trim();
+  state.pass = $('pass').value;
+  saveCfg();
+  busy('btnSave', true, 'Prüfe …');
+  try{
+    const d = await api('ping');
+    state.mapping = d.mapping;
+    say('connStatus','good','Verbunden. Kalender: ' + d.kalender);
+    $('btnParse').disabled = !state.file;
+    render();
+  }catch(err){
+    say('connStatus','bad', err.message);
+  }finally{ busy('btnSave', false); }
+});
+
+/* ---------- Datei ---------- */
+const drop = $('drop');
+drop.addEventListener('click', () => $('file').click());
+drop.addEventListener('keydown', e => {
+  if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('file').click(); }
+});
+['dragenter','dragover'].forEach(t => drop.addEventListener(t, e => {
+  e.preventDefault(); drop.classList.add('over');
+}));
+['dragleave','drop'].forEach(t => drop.addEventListener(t, e => {
+  e.preventDefault(); drop.classList.remove('over');
+}));
+drop.addEventListener('drop', e => {
+  if(e.dataTransfer.files.length) setFile(e.dataTransfer.files[0]);
+});
+$('file').addEventListener('change', e => {
+  if(e.target.files.length) setFile(e.target.files[0]);
+});
+
+function setFile(f){
+  state.file = f;
+  $('fname').textContent = f.name + ' · ' + Math.round(f.size/1024) + ' KB';
+  $('btnParse').disabled = !(state.url && state.pass);
+  if(f.size > 4 * 1024 * 1024){
+    say('parseStatus','bad','Datei ist größer als 4 MB. Bitte kleiner exportieren oder als PDF senden.');
+  }else{
+    hide('parseStatus');
+  }
+}
+
+function toBase64(file){
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(',')[1]);
+    r.onerror = () => reject(new Error('Datei konnte nicht gelesen werden.'));
+    r.readAsDataURL(file);
+  });
+}
+
+/* ---------- Erkennen ---------- */
+$('btnParse').addEventListener('click', async () => {
+  if(!state.file) return;
+  busy('btnParse', true, 'Lese Plan …');
+  say('parseStatus','info','Der Plan wird gelesen. Das dauert einen Moment.');
+  try{
+    const b64 = await toBase64(state.file);
+    const d = await api('parse', {fileB64:b64, mediaType:state.file.type || 'application/octet-stream'});
+    state.mapping = d.mapping;
+    state.items = d.list.map(x => ({date:x.date, code:x.code}));
+    render();
+    if(state.items.length) say('parseStatus','good', state.items.length + ' Dienste erkannt. Bitte prüfen.');
+    else say('parseStatus','bad','Keine Dienste erkannt. Ist es der richtige Plan?');
+  }catch(err){
+    say('parseStatus','bad', err.message);
+  }finally{ busy('btnParse', false); }
+});
+
+/* ---------- Liste ---------- */
+function fmtTime(m){
+  const p = n => String(n).padStart(2,'0');
+  return p(m.sh)+':'+p(m.sm)+'–'+p(m.eh)+':'+p(m.em)+(m.plusDay?' (+1)':'');
+}
+function codes(){ return state.mapping ? Object.keys(state.mapping) : []; }
+
+function render(){
+  const rows = $('rows');
+  rows.innerHTML = '';
+  const list = state.items;
+
+  $('empty').style.display = list.length ? 'none' : 'block';
+  $('count').textContent = list.length + (list.length === 1 ? ' Dienst' : ' Dienste');
+  $('btnWrite').disabled = !list.length || !state.mapping;
+  $('btnAdd').disabled = !state.mapping;
+
+  // Zusammenfassung
+  const chips = $('chips');
+  chips.innerHTML = '';
+  const tally = {};
+  list.forEach(i => { tally[i.code] = (tally[i.code]||0) + 1; });
+  Object.keys(tally).sort().forEach(c => {
+    const m = state.mapping[c] || {};
+    const el = document.createElement('span');
+    el.className = 'chip';
+    el.innerHTML = '<span class="dot" style="background:' +
+      (COLORS[m.colorId] || 'var(--c-offen)') + '"></span>' + c + ' · ' + tally[c];
+    chips.appendChild(el);
+  });
+
+  list.forEach((item, idx) => {
+    const m = state.mapping ? state.mapping[item.code] : null;
+    const row = document.createElement('div');
+    row.className = 'row';
+
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    if(m && COLORS[m.colorId]) bar.style.background = COLORS[m.colorId];
+    row.appendChild(bar);
+
+    const mid = document.createElement('div');
+    mid.className = 'mid';
+
+    const ctl = document.createElement('div');
+    ctl.className = 'ctl';
+
+    const dateIn = document.createElement('input');
+    dateIn.type = 'date'; dateIn.value = item.date;
+    dateIn.addEventListener('change', () => { item.date = dateIn.value; render(); });
+    ctl.appendChild(dateIn);
+
+    const sel = document.createElement('select');
+    codes().forEach(c => {
+      const o = document.createElement('option');
+      o.value = c; o.textContent = c;
+      if(c === item.code) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change', () => { item.code = sel.value; render(); });
+    ctl.appendChild(sel);
+    mid.appendChild(ctl);
+
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    if(m){
+      const d = item.date ? new Date(item.date + 'T00:00:00') : null;
+      const wd = d && !isNaN(d) ? WD[d.getDay()] + ' · ' : '';
+      meta.innerHTML = wd + m.summary + ' · ' + fmtTime(m) +
+        (m.colorId ? '' : ' <span class="flag">⚠ Farbe offen</span>');
+    }
+    mid.appendChild(meta);
+    row.appendChild(mid);
+
+    const del = document.createElement('button');
+    del.className = 'del'; del.type = 'button';
+    del.setAttribute('aria-label','Dienst entfernen');
+    del.textContent = '×';
+    del.addEventListener('click', () => { state.items.splice(idx,1); render(); });
+    row.appendChild(del);
+
+    rows.appendChild(row);
+  });
+}
+
+$('btnAdd').addEventListener('click', () => {
+  const last = state.items[state.items.length - 1];
+  let d = last ? last.date : new Date().toISOString().slice(0,10);
+  state.items.push({date:d, code:codes()[0] || 'F8'});
+  render();
+});
+
+/* ---------- Eintragen ---------- */
+$('btnWrite').addEventListener('click', async () => {
+  const bad = state.items.filter(i => !i.date);
+  if(bad.length){ say('writeStatus','bad','Bei ' + bad.length + ' Einträgen fehlt das Datum.'); return; }
+
+  busy('btnWrite', true, 'Trage ein …');
+  say('writeStatus','info','Die Dienste werden eingetragen.');
+  try{
+    const d = await api('write', {items: state.items});
+    let msg = d.created + ' eingetragen';
+    if(d.skipped) msg += ', ' + d.skipped + ' waren schon vorhanden';
+    if(d.errors)  msg += ', ' + d.errors + ' fehlgeschlagen';
+    say('writeStatus', d.errors ? 'bad' : 'good', msg + '.');
+  }catch(err){
+    say('writeStatus','bad', err.message);
+  }finally{ busy('btnWrite', false); }
+});
+
+/* ---------- Start ---------- */
+loadCfg();
+render();
+if(state.url && state.pass){
+  api('ping').then(d => {
+    state.mapping = d.mapping;
+    say('connStatus','good','Verbunden. Kalender: ' + d.kalender);
+    render();
+  }).catch(err => {
+    $('conn').open = true;
+    say('connStatus','bad', err.message);
+  });
+}
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
