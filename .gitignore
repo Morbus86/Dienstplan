@@ -1,0 +1,10 @@
+# Echte Dienstpläne / Screenshots (personenbezogene Daten) – NIE committen
+private/
+*.pdf
+
+# Persoenliche Claude-Code-Einstellungen
+.claude/settings.local.json
+
+# System
+.DS_Store
+Thumbs.db
